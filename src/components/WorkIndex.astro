@@ -1,7 +1,7 @@
 ---
 // Typed table of contents for every piece, like the back page of a zine. Hovering or
-// focusing a row pops up the taped artwork beside the cursor; on touch screens each row
-// shows a small thumbnail instead.
+// focusing a row pops up the taped artwork beside the cursor. Phones and touch screens
+// get plain rows with no preview.
 import { Image } from 'astro:assets';
 import { art, type Artwork } from '../data/artworks';
 import { url } from '../data/site';
@@ -31,9 +31,11 @@ const tapes = ['y', 'b', 'r'] as const;
 </ol>
 
 <script>
-  // Let the preview follow the cursor. Without this it sits at the right of the row.
+  // Let the preview follow a real mouse cursor (taps also fire mouse events, so filter
+  // those out). Without this it sits at the right of the row.
   for (const list of document.querySelectorAll<HTMLElement>('.index')) {
-    list.addEventListener('mousemove', (e) => {
+    list.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
       list.style.setProperty('--x', `${e.clientX}px`);
       list.style.setProperty('--y', `${e.clientY}px`);
       list.classList.add('follow');
@@ -115,23 +117,15 @@ const tapes = ['y', 'b', 'r'] as const;
   }
   @keyframes row { from { opacity: 0; transform: translateX(-1.5rem); } }
 
-  /* touch screens: no hover, so show a small thumbnail in each row */
+  /* phones and touch screens: no hover, so no preview; plain rows */
   @media (hover: none), (max-width: 700px) {
+    .peek { display: none; }
     a {
-      grid-template-columns: 4.5rem minmax(0, 1fr) auto;
-      grid-template-areas: 'peek title year' 'peek no year';
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: 'title year' 'no year';
       align-items: center;
       row-gap: 0.2rem;
     }
-    .peek {
-      grid-area: peek;
-      position: static;
-      width: 4.5rem;
-      opacity: 1;
-      padding: 0.25rem;
-      transform: rotate(var(--tilt));
-    }
-    .peek .tape { display: none; }
     .title { grid-area: title; }
     .no { grid-area: no; font-size: 0.8rem; }
     .year { grid-area: year; }
