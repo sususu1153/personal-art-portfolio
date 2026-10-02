@@ -20,7 +20,8 @@ const design = [
   ['2025 – 2026', 'Graphic designer', 'Wizard’s Wardrobe, an after-school English ' +
     'tutoring program: visual brand, social posts, event highlights'],
   ['2024 – now', 'Outreach lead', 'The Hyperbolic Review, a math-poetry magazine: ' +
-    'website layout, social visuals, interviews with math poets'],
+    'website layout, social visuals, interviews with math poets',
+    'https://www.thehyperbolicreview.com/'],
   ['2022, 2025', 'Team T-shirts', 'Science Olympiad, worn by 80+ students, coaches, and ' +
     'teachers'],
   ['2022 – 2024', 'Key Club', '35+ drawings delivered to local hospitals and nursing ' +
@@ -57,8 +58,21 @@ const sections = [
     <section class="list">
       <h2><span class={s.color}>{s.title}</span></h2>
       <ul>
-        {s.rows.map(([when, what, detail]) => (
-          <li><span class="when">{when}</span><b>{what}</b><span>{detail}</span></li>
+        {s.rows.map(([when, what, detail, link]) => (
+          <li>
+            <span class="when">{when}</span><b>{what}</b>
+            <span>
+              {detail}
+              {link && (
+                <>
+                  {' '}
+                  <a class="ext" href={link} target="_blank" rel="noopener">
+                    {new URL(link).hostname.replace(/^www\./, '')}&nbsp;&#8599;
+                  </a>
+                </>
+              )}
+            </span>
+          </li>
         ))}
       </ul>
     </section>
@@ -104,6 +118,8 @@ const sections = [
   }
   li + li { border-top: 1px solid rgb(29 27 25 / 0.2); }
   .when { grid-row: 1 / span 2; font-weight: 700; }
+  .ext { font-weight: 700; text-underline-offset: 3px; }
+  .ext:hover { background: var(--marigold); }
 
   @media (max-width: 700px) {
     .intro, .list { grid-template-columns: 1fr; }
