@@ -1,0 +1,55 @@
+---
+// A pinboard of artworks, each piece taped at an angle.
+// "scatter": hand-placed asymmetric grid, for a short curated set.
+// "columns": even-width columns that keep every piece's shape, for the full archive.
+import TapedPiece from './TapedPiece.astro';
+import { art, type Artwork } from '../data/artworks';
+import { url } from '../data/site';
+
+interface Props {
+  items: Artwork[];
+  figStart?: number;
+  layout?: 'scatter' | 'columns';
+}
+const { items, figStart = 1, layout = 'scatter' } = Astro.props;
+
+// Repeating layout pattern of six slots: column placement, tilt, tape, nudge.
+const slots = [
+  { col: '1 / span 7', tilt: -1.5, tape: 'y', top: '0' },
+  { col: '9 / span 4', tilt: 2, tape: 'b', top: '3rem' },
+  { col: '2 / span 3', tilt: 1, tape: 'y', top: '0' },
+  { col: '6 / span 3', tilt: -2.5, tape: 'r', top: '5rem' },
+  { col: '9 / span 4', tilt: 1.5, tape: 'y', top: '-2rem' },
+  { col: '3 / span 5', tilt: -1, tape: 'b', top: '-4rem' },
+] as const;
+---
+<section class={`board ${layout}`}>
+  {items.map((a, i) => {
+    const s = slots[i % slots.length];
+    return (
+      <div class="slot" style={`--col: ${s.col}; --top: ${s.top}`}>
+        <TapedPiece image={art(a.slug)} alt={a.alt}
+          caption={a.year ? `${a.title}, ${a.year}` : a.title} fig={figStart + i}
+          href={url(`work/${a.slug}/`)} tape={s.tape} tilt={s.tilt} />
+      </div>
+    );
+  })}
+</section>
+
+<style>
+  .board {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 3rem 2rem;
+    padding: 3rem var(--gutter) 6rem;
+  }
+  .slot { grid-column: var(--col); margin-top: var(--top); }
+
+  .columns { display: block; columns: 3 18rem; column-gap: 2.5rem; }
+  .columns .slot { break-inside: avoid; margin: 0 0 3rem; padding-top: 1rem; }
+
+  @media (max-width: 700px) {
+    .scatter { grid-template-columns: 1fr; gap: 2.5rem; }
+    .slot { grid-column: 1; margin-top: 0; }
+  }
+</style>

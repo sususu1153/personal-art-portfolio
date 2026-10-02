@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro';
+import Board from '../components/Board.astro';
+import TapedPiece from '../components/TapedPiece.astro';
+import PullQuote from '../components/PullQuote.astro';
+import { art, bySlug } from '../data/artworks';
+import { url } from '../data/site';
+
+const hero = bySlug('infinite-joy');
+const selected = ['run-toward-misery', 'say-cheese', 'overflow', 'the-dome', 'blue-hour',
+  'hole-in-the-universe'].map(bySlug);
+---
+<Base>
+  <section class="hero">
+    <div>
+      <h1>
+        <span class="hl r tilt">Suzie</span><br />
+        <span class="hl">Lou</span>
+      </h1>
+      <p class="intro" data-type="28" data-marker>
+        illustration &amp; graphic design.<br />
+        alcohol markers, colored pencils,<br />
+        3D-printed tiles, glitter, balsa sticks.
+      </p>
+    </div>
+    <div class="hero-piece">
+      <TapedPiece image={art(hero.slug)} alt={hero.alt}
+        caption={`${hero.title}, ${hero.year}`} fig={1} href={url(`work/${hero.slug}/`)}
+        tilt={2.5} widths={[500, 900]} sizes="(max-width: 700px) 85vw, 38vw" eager />
+    </div>
+  </section>
+
+  <PullQuote lead="Which one is distorted: our perception, or"
+    mark="the camera?" source={{ title: 'Say Cheese?', year: 2025, slug: 'say-cheese', fig: 3 }} />
+
+  <hr class="rule" />
+  <Board items={selected} figStart={2} />
+
+  <p class="more"><a href={url('work/')}><span class="hl">see all work &rarr;</span></a></p>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2rem;
+    padding: clamp(2rem, 6vw, 5rem) var(--gutter);
+    align-items: start;
+  }
+  h1 {
+    font-size: clamp(4.5rem, 15vw, 15rem);
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+  }
+  .tilt { display: inline-block; transform: rotate(-3deg); }
+  .intro { font-size: 1.05rem; margin-top: 2rem; }
+  .hero-piece { grid-column: 2; }
+
+  .more {
+    font-family: var(--display);
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    padding: 0 var(--gutter) 4rem;
+    text-align: right;
+  }
+  .more a { text-decoration: none; }
+
+  @media (max-width: 700px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-piece { grid-column: 1; width: 88%; margin-left: auto; }
+  }
+</style>

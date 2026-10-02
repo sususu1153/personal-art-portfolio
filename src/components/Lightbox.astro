@@ -1,0 +1,219 @@
+---
+// Full-screen viewer for artwork. Any element with data-zoom-src opens it.
+// Zoom with wheel/trackpad, pinch, double-click, the buttons, or + / - / 0;
+// drag to pan; close with x, Esc, or a click on the dark background.
+---
+<dialog class="lightbox" aria-label="Artwork viewer">
+  <div class="stage">
+    <img alt="" draggable="false" />
+  </div>
+  <div class="bar">
+    <span class="cap"></span>
+    <span class="controls">
+      <button type="button" data-act="out" aria-label="Zoom out">&minus;</button>
+      <span class="pct" aria-live="polite">100%</span>
+      <button type="button" data-act="in" aria-label="Zoom in">+</button>
+      <button type="button" data-act="fit">fit</button>
+      <button type="button" data-act="close" aria-label="Close" autofocus>&times;</button>
+    </span>
+  </div>
+</dialog>
+
+<script>
+  const dlg = document.querySelector<HTMLDialogElement>('.lightbox')!;
+  const stage = dlg.querySelector<HTMLElement>('.stage')!;
+  const img = dlg.querySelector<HTMLImageElement>('img')!;
+  const cap = dlg.querySelector<HTMLElement>('.cap')!;
+  const pct = dlg.querySelector<HTMLElement>('.pct')!;
+  const MIN = 1;
+  const MAX = 4;
+  let scale = 1;
+  let x = 0;
+  let y = 0;
+
+  const apply = () => {
+    img.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    pct.textContent = `${Math.round(scale * 100)}%`;
+    stage.classList.toggle('zoomed', scale > 1);
+  };
+  const reset = () => {
+    scale = 1;
+    x = y = 0;
+    apply();
+  };
+  /** Zoom by factor f, keeping the screen point (cx, cy) fixed under the cursor. */
+  const zoomAt = (cx: number, cy: number, f: number) => {
+    const next = Math.min(MAX, Math.max(MIN, scale * f));
+    const r = stage.getBoundingClientRect();
+    const px = cx - (r.left + r.width / 2);
+    const py = cy - (r.top + r.height / 2);
+    x = px - (px - x) * (next / scale);
+    y = py - (py - y) * (next / scale);
+    scale = next;
+    if (scale === 1) x = y = 0;
+    apply();
+  };
+  const zoomCenter = (f: number) => {
+    const r = stage.getBoundingClientRect();
+    zoomAt(r.left + r.width / 2, r.top + r.height / 2, f);
+  };
+
+  // open from any [data-zoom-src]
+  document.querySelectorAll<HTMLElement>('[data-zoom-src]').forEach((el) => {
+    const open = () => {
+      img.src = el.dataset.zoomSrc!;
+      img.alt = el.querySelector('img')?.alt ?? '';
+      cap.textContent = el.dataset.zoomCaption ?? '';
+      reset();
+      dlg.showModal();
+      document.documentElement.style.overflow = 'hidden';
+    };
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open();
+      }
+    });
+  });
+  dlg.addEventListener('close', () => (document.documentElement.style.overflow = ''));
+
+  // buttons and keys
+  dlg.querySelectorAll<HTMLButtonElement>('[data-act]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const act = b.dataset.act;
+      if (act === 'in') zoomCenter(1.5);
+      else if (act === 'out') zoomCenter(1 / 1.5);
+      else if (act === 'fit') reset();
+      else dlg.close();
+    }),
+  );
+  dlg.addEventListener('keydown', (e) => {
+    if (e.key === '+' || e.key === '=') zoomCenter(1.5);
+    else if (e.key === '-') zoomCenter(1 / 1.5);
+    else if (e.key === '0') reset();
+  });
+
+  // wheel / trackpad zoom
+  stage.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)));
+    },
+    { passive: false },
+  );
+  img.addEventListener('dblclick', (e) =>
+    scale > 1 ? reset() : zoomAt(e.clientX, e.clientY, 2.5),
+  );
+
+  // drag to pan, pinch to zoom
+  const pointers = new Map<number, { x: number; y: number }>();
+  let pinch = 0;
+  let moved = false;
+  stage.addEventListener('pointerdown', (e) => {
+    stage.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = false;
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinch = Math.hypot(a.x - b.x, a.y - b.y);
+    }
+  });
+  stage.addEventListener('pointermove', (e) => {
+    const prev = pointers.get(e.pointerId);
+    if (!prev) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / pinch);
+      pinch = d;
+    } else if (scale > 1) {
+      x += e.clientX - prev.x;
+      y += e.clientY - prev.y;
+      apply();
+    }
+    if (Math.abs(e.clientX - prev.x) + Math.abs(e.clientY - prev.y) > 2) moved = true;
+  });
+  const up = (e: PointerEvent) => {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinch = 0;
+  };
+  stage.addEventListener('pointerup', up);
+  stage.addEventListener('pointercancel', up);
+
+  // a plain click on the dark area (not the art, not after a drag) closes the viewer
+  stage.addEventListener('click', (e) => {
+    if (e.target === stage && !moved && scale === 1) dlg.close();
+  });
+</script>
+
+<style>
+  .lightbox {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: #141311;
+    color: var(--paper);
+    overflow: hidden;
+  }
+  .lightbox::backdrop { background: rgb(20 19 17 / 0.9); }
+  .lightbox[open] { display: flex; flex-direction: column; }
+  .lightbox[open] .stage { animation: in 0.25s ease-out; }
+  @keyframes in { from { opacity: 0; transform: scale(0.96); } }
+
+  .stage {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    touch-action: none;
+    cursor: zoom-in;
+  }
+  .stage.zoomed { cursor: grab; }
+  .stage.zoomed:active { cursor: grabbing; }
+  img {
+    max-width: 92vw;
+    max-height: calc(100dvh - 5rem);
+    width: auto;
+    height: auto;
+    user-select: none;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem var(--gutter);
+    font-family: var(--typed);
+    font-size: 0.9rem;
+    border-top: 2px dashed rgb(239 230 216 / 0.4);
+  }
+  .controls { display: flex; align-items: center; gap: 0.4rem; }
+  .pct { min-width: 3.5rem; text-align: center; font-weight: 700; }
+  button {
+    font: inherit;
+    font-weight: 700;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    padding: 0 0.6rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 0;
+    cursor: pointer;
+  }
+  button:hover { background: var(--marigold); }
+  button[data-act='close'] { background: var(--vermilion); color: var(--paper); font-size: 1.2rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lightbox[open] .stage { animation: none; }
+  }
+</style>

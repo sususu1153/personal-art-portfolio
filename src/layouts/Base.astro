@@ -1,0 +1,97 @@
+---
+import '@fontsource/archivo-black';
+import '@fontsource/courier-prime/400.css';
+import '@fontsource/courier-prime/700.css';
+import '../styles/global.css';
+import { url, site } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title, description = site.tagline } = Astro.props;
+const fullTitle = title ? `${title} | ${site.name}` : site.name;
+const path = Astro.url.pathname;
+const active = (p: string) => path.startsWith(url(p));
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{fullTitle}</title>
+  <meta name="description" content={description} />
+  <link rel="icon" type="image/svg+xml" href={url('favicon.svg')} />
+  <script is:inline>
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('js');
+    }
+  </script>
+</head>
+<body>
+  <header class="top">
+    <a class="home hl k" href={url('')}>{site.name.toUpperCase()}</a>
+    <nav>
+      <a href={url('work/')} aria-current={active('work') ? 'page' : undefined}>Work</a>
+      {' / '}
+      <a href={url('about/')} aria-current={active('about') ? 'page' : undefined}>About</a>
+    </nav>
+  </header>
+
+  <main><slot /></main>
+
+  <footer class="bottom">
+    <a class="say-hi" href={`mailto:${site.email}`}><span class="hl r">say hi &rarr;</span></a>
+    <span>
+      made by hand, pasted together online.<br />
+      artwork &copy; {new Date().getFullYear()} {site.name}, all rights reserved.
+    </span>
+  </footer>
+  <script>
+    import '../scripts/motion.ts';
+  </script>
+</body>
+</html>
+
+<style>
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem var(--gutter);
+    border-bottom: 2px dashed var(--ink);
+    font-weight: 700;
+  }
+  .home { text-decoration: none; padding: 0.1rem 0.5rem; }
+  nav a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    background: linear-gradient(var(--marigold), var(--marigold)) no-repeat 0 100% / 0 100%;
+    transition: background-size 0.25s ease-out;
+  }
+  nav a:hover { background-size: 100% 100%; }
+  nav a[aria-current='page'] { background: var(--marigold); text-decoration: none; }
+
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: baseline;
+    padding: 2rem var(--gutter) 3rem;
+    border-top: 2px dashed var(--ink);
+  }
+  .say-hi {
+    font-family: var(--display);
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    text-decoration: none;
+    display: inline-block;
+  }
+  .say-hi:hover { animation: wiggle 0.5s ease-in-out; }
+  @keyframes wiggle {
+    25% { transform: rotate(-4deg); }
+    50% { transform: rotate(3deg); }
+    75% { transform: rotate(-2deg); }
+  }
+</style>

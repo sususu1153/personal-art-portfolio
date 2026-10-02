@@ -1,3 +1,18 @@
+This repository contains two kinds of material under different terms.
+
+ARTWORK: ALL RIGHTS RESERVED
+
+Copyright (c) 2023-2026 Suzie Lou. All rights reserved.
+
+All artwork and images in this repository, including everything in src/assets/art/
+and any resized or converted copies produced by the build, are NOT covered by the
+MIT License below. You may not copy, reproduce, modify, distribute, or use them
+(including for training machine learning models) without written permission.
+
+CODE: MIT LICENSE
+
+The source code (everything other than the artwork above) is licensed as follows.
+
 MIT License
 
 Copyright (c) 2024 sususu1153

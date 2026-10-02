@@ -1,0 +1,140 @@
+:root {
+  --paper: #efe6d8;
+  --ink: #1d1b19;
+  --vermilion: #d8321f;
+  --marigold: #f6cf22;
+  --cobalt: #2340b8;
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --display: 'Archivo Black', sans-serif;
+  --typed: 'Courier Prime', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--typed);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* paper grain over everything */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+img { display: block; width: 100%; height: auto; }
+a { color: inherit; }
+
+h1, h2, h3 {
+  font-family: var(--display);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+/* highlighter strip behind words, like a cut-out label */
+.hl {
+  background: var(--marigold);
+  padding: 0 0.12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.hl.r { background: var(--vermilion); color: var(--paper); }
+.hl.b { background: var(--cobalt); color: var(--paper); }
+.hl.k { background: var(--ink); color: var(--paper); }
+
+.rule { border: 0; border-top: 2px dashed var(--ink); }
+
+.tape {
+  position: absolute;
+  width: 7rem;
+  height: 1.8rem;
+  top: -0.8rem;
+  left: 30%;
+  transform: rotate(-4deg);
+  opacity: 0.8;
+  z-index: 2;
+  mix-blend-mode: multiply;
+}
+.tape.y { background: var(--marigold); }
+.tape.b { background: #8fb2e6; }
+.tape.r { background: #f08a7a; }
+
+:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 3px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- motion (only with JS on and reduced motion off) ---------- */
+
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  animation: blink 0.8s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* typewriter text stays hidden until it starts typing, so it never flashes */
+.js [data-type]:not([data-typed]) { visibility: hidden; }
+
+/* a piece drops onto the page with a little bounce, then its tape sticks down */
+.js [data-paste]:not(.in) { opacity: 0; }
+.js [data-paste].in { animation: paste 0.6s cubic-bezier(0.2, 1.5, 0.45, 1) backwards; }
+.js [data-paste].in .tape { animation: stick 0.3s 0.45s ease-out backwards; }
+@keyframes paste {
+  from {
+    opacity: 0;
+    transform: translateY(40px) rotate(calc(var(--tilt, 0deg) + 7deg)) scale(1.08);
+  }
+}
+@keyframes stick { from { clip-path: inset(0 100% 0 0); } }
+
+/* cut-out strips behind headings get laid down left to right, one after another */
+.js :is(h1, h2):not(.in) .hl { clip-path: inset(0 100% 0 0); }
+.js :is(h1, h2).in .hl { animation: lay 0.45s cubic-bezier(0.6, 0, 0.2, 1) backwards; }
+.js :is(h1, h2).in .hl:nth-of-type(2) { animation-delay: 0.25s; }
+@keyframes lay { from { clip-path: inset(0 100% 0 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-paste], .js [data-paste] .tape, .js :is(h1, h2) .hl { animation: none !important; }
+  .caret { display: none; }
+}
+
+/* highlighter stroke on hovered words, kept thin and translucent so it never reads as
+   a button: links use solid blocks and underlines instead */
+@media (hover: hover) {
+  .w {
+    background: linear-gradient(rgb(246 207 34 / 0.75), rgb(246 207 34 / 0.75))
+      no-repeat 0 88% / 0 0.5em;
+    transition: background-size 0.9s ease-out;
+  }
+  .w:hover { background-size: 100% 0.5em; transition-duration: 0.12s; }
+}
+@media (prefers-reduced-motion: reduce) { .w { transition: none; } }
+
+/* selected text matches the strip on its section's heading (class set in motion.ts);
+   red is the default, and text on a strip itself selects in ink so it stays visible */
+::selection { background: var(--vermilion); color: var(--paper); }
+.sel-y ::selection { background: var(--marigold); color: var(--ink); }
+.sel-r ::selection { background: var(--vermilion); color: var(--paper); }
+.sel-b ::selection { background: var(--cobalt); color: var(--paper); }
+.sel-k ::selection { background: var(--ink); color: var(--paper); }
+.hl::selection, .hl ::selection { background: var(--ink); color: var(--paper); }

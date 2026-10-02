@@ -1,0 +1,99 @@
+---
+// Big pull quote from a piece's description, framed like a camera viewfinder (REC light,
+// battery, corner brackets). The text "hunts for focus" as it scrolls into view.
+import { url } from '../data/site';
+
+interface Props {
+  lead: string; // plain part of the quote
+  mark: string; // part set on a highlight strip
+  source: { title: string; year: number; slug: string; fig: number };
+}
+const { lead, mark, source } = Astro.props;
+---
+<figure class="finder" data-anim>
+  <span class="rec">REC</span><span class="batt" aria-hidden="true"></span>
+  <span class="corner tl"></span><span class="corner tr"></span>
+  <span class="corner bl"></span><span class="corner br"></span>
+  <blockquote>
+    &ldquo;{lead}{' '}<span class="hl b">{mark}</span>&rdquo;
+  </blockquote>
+  <figcaption>
+    <a href={url(`work/${source.slug}/`)}>
+      fig. {source.fig} &mdash; {source.title}, {source.year}
+    </a>
+  </figcaption>
+</figure>
+
+<style>
+  .finder {
+    position: relative;
+    margin: 2rem var(--gutter) 4rem clamp(1rem, 8vw, 9rem);
+    padding: clamp(2.5rem, 5vw, 4rem) clamp(1.5rem, 5vw, 4rem);
+    max-width: 54rem;
+    background: rgb(29 27 25 / 0.04);
+  }
+  blockquote {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 4.5vw, 4rem);
+    line-height: 1.15;
+    max-width: 22ch;
+    margin: 0.5rem 0 1.5rem;
+  }
+  figcaption {
+    position: absolute;
+    bottom: 1rem;
+    right: clamp(1.5rem, 4vw, 3rem);
+    font-size: 0.85rem;
+  }
+  figcaption a { text-decoration: none; }
+  figcaption a:hover { text-decoration: underline; }
+
+  .corner { position: absolute; width: 2.2rem; height: 2.2rem; border: 4px solid var(--ink); }
+  .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .rec {
+    position: absolute;
+    top: 1rem;
+    left: clamp(1.5rem, 4vw, 3rem);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .rec::before {
+    content: '';
+    display: inline-block;
+    width: 0.7em;
+    height: 0.7em;
+    margin-right: 0.4em;
+    border-radius: 50%;
+    background: var(--vermilion);
+    vertical-align: 0.05em;
+    animation: rec 1.2s steps(1) infinite;
+  }
+  @keyframes rec { 50% { opacity: 0.15; } }
+  .batt {
+    position: absolute;
+    top: 1.1rem;
+    right: clamp(1.5rem, 4vw, 3rem);
+    width: 1.8rem;
+    height: 0.8rem;
+    border: 2px solid var(--ink);
+    background: linear-gradient(90deg, var(--ink) 70%, transparent 70%) content-box;
+    padding: 1px;
+  }
+
+  /* the text hunts for focus: sharp, soft again, then sharp */
+  :global(.js) .finder:not(.in) blockquote { filter: blur(10px); }
+  :global(.js) .finder.in blockquote { animation: focus 1.3s ease-out backwards; }
+  @keyframes focus {
+    0% { filter: blur(10px); transform: scale(1.05); }
+    35% { filter: blur(1px); transform: scale(0.99); }
+    55% { filter: blur(4px); transform: scale(1.01); }
+    100% { filter: blur(0); transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rec::before { animation: none; }
+  }
+</style>

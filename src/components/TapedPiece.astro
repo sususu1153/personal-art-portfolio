@@ -1,0 +1,59 @@
+---
+// One artwork "taped" onto the page: white mount, tape strip, typed caption.
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  image: ImageMetadata;
+  alt: string;
+  caption: string;
+  fig?: number;
+  href?: string;
+  tape?: 'y' | 'b' | 'r';
+  tilt?: number; // degrees
+  widths?: number[];
+  sizes?: string;
+  eager?: boolean;
+  class?: string;
+  zoomSrc?: string; // full-size image URL; makes the piece open the Lightbox viewer
+  zoomCaption?: string;
+}
+const {
+  image, alt, caption, fig, href, tape = 'y', tilt = 0,
+  widths = [400, 800], sizes = '(max-width: 700px) 85vw, 30vw', eager = false,
+  class: className = '', zoomSrc, zoomCaption,
+} = Astro.props;
+const zoom = zoomSrc
+  ? { 'data-zoom-src': zoomSrc, 'data-zoom-caption': zoomCaption, tabindex: 0,
+      role: 'button', 'aria-label': `View full size: ${caption}` }
+  : {};
+const Tag = href ? 'a' : 'figure';
+---
+<Tag class={`piece ${className}`} href={href} style={`--tilt: ${tilt}deg`} data-paste {...zoom}>
+  <span class={`tape ${tape}`}></span>
+  <Image src={image} alt={alt} widths={widths} sizes={sizes}
+    loading={eager ? 'eager' : 'lazy'} />
+  <span class="cap" data-type="12">
+    {fig !== undefined && <>fig. {fig} &mdash; </>}<b>{caption}</b>
+  </span>
+</Tag>
+
+<style>
+  .piece {
+    display: block;
+    position: relative;
+    background: #fff;
+    padding: 0.7rem 0.7rem 0.2rem;
+    text-decoration: none;
+    transform: rotate(var(--tilt));
+    transition: transform 0.2s;
+  }
+  a.piece:hover, a.piece:focus-visible { transform: rotate(0deg) scale(1.02); z-index: 3; }
+  [data-zoom-src] { cursor: zoom-in; }
+  [data-zoom-src]:hover, [data-zoom-src]:focus-visible { transform: rotate(0deg); }
+  /* the tape peels up a little when you hover */
+  .piece :global(.tape) { transition: top 0.2s, opacity 0.2s; }
+  a.piece:hover :global(.tape) { top: -1.25rem; opacity: 0.95; }
+  .cap { display: block; font-size: 0.85rem; padding: 0.5rem 0.1rem; }
+  .cap b { font-weight: 700; }
+</style>

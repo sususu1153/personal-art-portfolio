@@ -1,0 +1,145 @@
+---
+// Typed table of contents for every piece, like the back page of a zine. Hovering or
+// focusing a row pops up the taped artwork beside the cursor; on touch screens each row
+// shows a small thumbnail instead.
+import { Image } from 'astro:assets';
+import { art, type Artwork } from '../data/artworks';
+import { url } from '../data/site';
+
+interface Props {
+  items: Artwork[];
+}
+const { items } = Astro.props;
+const tapes = ['y', 'b', 'r'] as const;
+---
+<ol class="index" data-anim>
+  {items.map((a, i) => (
+    <li style={`--i: ${i}`}>
+      <a href={url(`work/${a.slug}/`)}>
+        <span class="no">No. {String(i + 1).padStart(2, '0')}</span>
+        <span class="title">{a.title}</span>
+        <span class="medium">{a.medium}</span>
+        <span class="year">{a.year ?? '—'}</span>
+        <span class="peek" aria-hidden="true" style={`--tilt: ${i % 2 ? 2.5 : -2.5}deg`}>
+          <span class={`tape ${tapes[i % 3]}`}></span>
+          <Image src={art(a.slug)} alt="" widths={[160, 420]}
+            sizes="(hover: hover) 15rem, 4.5rem" />
+        </span>
+      </a>
+    </li>
+  ))}
+</ol>
+
+<script>
+  // Let the preview follow the cursor. Without this it sits at the right of the row.
+  for (const list of document.querySelectorAll<HTMLElement>('.index')) {
+    list.addEventListener('mousemove', (e) => {
+      list.style.setProperty('--x', `${e.clientX}px`);
+      list.style.setProperty('--y', `${e.clientY}px`);
+      list.classList.add('follow');
+    });
+  }
+</script>
+
+<style>
+  .index {
+    list-style: none;
+    padding: 0 var(--gutter);
+    margin: 0;
+  }
+  li { border-bottom: 1px solid rgb(29 27 25 / 0.25); }
+  li:first-child { border-top: 2px solid var(--ink); }
+  a {
+    position: relative;
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1.4fr) minmax(0, 1fr) 4rem;
+    gap: 1rem;
+    align-items: baseline;
+    padding: 0.9rem 0.25rem;
+    text-decoration: none;
+  }
+  .no { font-weight: 700; }
+  .title {
+    font-family: var(--display);
+    font-size: clamp(1.2rem, 2.4vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    justify-self: start;
+    transition: transform 0.2s;
+  }
+  .medium { font-size: 0.9rem; }
+  .year { text-align: right; font-weight: 700; }
+
+  /* hovered row: the title gets a cut-out strip and nudges right */
+  a:hover .title, a:focus-visible .title {
+    background: var(--marigold);
+    transform: translateX(0.5rem);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* the taped preview */
+  .peek {
+    position: absolute;
+    right: 12%;
+    top: 50%;
+    width: 15rem;
+    background: #fff;
+    padding: 0.5rem;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transform: translateY(-50%) rotate(var(--tilt)) scale(0.85);
+    transition: opacity 0.15s, transform 0.2s cubic-bezier(0.2, 1.5, 0.45, 1);
+  }
+  .peek .tape { width: 5rem; height: 1.3rem; top: -0.6rem; left: 32%; }
+  a:hover .peek, a:focus-visible .peek {
+    opacity: 1;
+    transform: translateY(-50%) rotate(var(--tilt)) scale(1);
+  }
+  /* with the script running, the preview hangs just off the cursor */
+  .follow .peek {
+    position: fixed;
+    left: calc(var(--x) + 1.5rem);
+    top: calc(var(--y) + 1rem);
+    right: auto;
+    transform: rotate(var(--tilt)) scale(0.85);
+  }
+  .follow a:hover .peek { transform: rotate(var(--tilt)) scale(1); }
+
+  /* rows slide in one after another */
+  :global(.js) .index:not(.in) li { opacity: 0; }
+  :global(.js) .index.in li {
+    animation: row 0.4s ease-out backwards;
+    animation-delay: calc(var(--i) * 0.05s);
+  }
+  @keyframes row { from { opacity: 0; transform: translateX(-1.5rem); } }
+
+  /* touch screens: no hover, so show a small thumbnail in each row */
+  @media (hover: none), (max-width: 700px) {
+    a {
+      grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+      grid-template-areas: 'peek title year' 'peek no year';
+      align-items: center;
+      row-gap: 0.2rem;
+    }
+    .peek {
+      grid-area: peek;
+      position: static;
+      width: 4.5rem;
+      opacity: 1;
+      padding: 0.25rem;
+      transform: rotate(var(--tilt));
+    }
+    .peek .tape { display: none; }
+    .title { grid-area: title; }
+    .no { grid-area: no; font-size: 0.8rem; }
+    .year { grid-area: year; }
+    .medium { display: none; }
+    a:hover .title { transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .peek, .title { transition: none; }
+  }
+</style>

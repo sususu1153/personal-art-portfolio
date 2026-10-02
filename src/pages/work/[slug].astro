@@ -1,0 +1,111 @@
+---
+import Base from '../../layouts/Base.astro';
+import TapedPiece from '../../components/TapedPiece.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import { getImage } from 'astro:assets';
+import { art, artworks } from '../../data/artworks';
+import { url } from '../../data/site';
+
+export function getStaticPaths() {
+  return artworks.map((a, i) => ({ params: { slug: a.slug }, props: { i } }));
+}
+
+const { i } = Astro.props;
+const a = artworks[i];
+const prev = artworks[(i - 1 + artworks.length) % artworks.length];
+const next = artworks[(i + 1) % artworks.length];
+// full-size versions for the zoom viewer
+const full = async (slug: string) =>
+  (await getImage({ src: art(slug), width: art(slug).width, format: 'webp' })).src;
+const fullMain = await full(a.slug);
+const fullProcess = a.process ? await full(a.process) : undefined;
+const figCaption = `fig. ${i + 1} \u2014 ${a.title}${a.year ? `, ${a.year}` : ''}`;
+---
+<Base title={a.title} description={a.description ?? a.alt}>
+  <article class="work">
+    <div class="image">
+      <TapedPiece image={art(a.slug)} alt={a.alt} caption={a.title} fig={i + 1}
+        tilt={i % 2 ? 1 : -1} tape={(['y', 'b', 'r'] as const)[i % 3]}
+        widths={[600, 1000, 1600]} sizes="(max-width: 900px) 92vw, 58vw" eager
+        zoomSrc={fullMain} zoomCaption={figCaption} />
+      <p class="hint">click to view full size</p>
+    </div>
+
+    <div class="text">
+      <p class="no">No. {String(i + 1).padStart(2, '0')}</p>
+      <h1><span class="hl">{a.title}</span></h1>
+      <p class="meta" data-type="20">{a.medium}{a.year && <>, {a.year}</>}</p>
+      {a.description && <p class="desc" data-marker>{a.description}</p>}
+    </div>
+  </article>
+
+  {a.process && (
+    <section class="process">
+      <h2><span class="hl r">Process</span></h2>
+      {a.processNote && <p data-marker>{a.processNote}</p>}
+      <div class="process-image">
+        <TapedPiece image={art(a.process)} alt={`Process photos and notes for ${a.title}`}
+          caption="from the sketchbook" tape="b" tilt={1.5} widths={[600, 1200]}
+          sizes="(max-width: 900px) 92vw, 50vw" zoomSrc={fullProcess}
+          zoomCaption={`${a.title}: process`} />
+      </div>
+    </section>
+  )}
+
+  <nav class="pager" aria-label="More work">
+    <a href={url(`work/${prev.slug}/`)}>&larr; <span class="hl">{prev.title}</span></a>
+    <a href={url('work/')}>all work</a>
+    <a href={url(`work/${next.slug}/`)}><span class="hl">{next.title}</span> &rarr;</a>
+  </nav>
+  <Lightbox />
+</Base>
+
+<style>
+  .work {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    padding: clamp(2.5rem, 6vw, 5rem) var(--gutter) 4rem;
+    align-items: start;
+  }
+  .no {
+    font-weight: 700;
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0 0.5rem;
+  }
+  h1 { font-size: clamp(2.4rem, 5vw, 4.5rem); margin: 1rem 0; }
+  .meta { font-weight: 700; }
+  .hint { font-size: 0.8rem; margin-top: 1rem; opacity: 0.7; }
+  .desc { margin-top: 1.5rem; font-size: 1.1rem; max-width: 52ch; }
+
+  .process {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    grid-template-rows: auto 1fr;
+    gap: 1rem 2rem;
+    align-items: start;
+    padding: 2rem var(--gutter) 4rem;
+    border-top: 2px dashed var(--ink);
+  }
+  .process h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); grid-column: 1; }
+  .process p { grid-column: 1; max-width: 48ch; }
+  .process-image { grid-column: 2; grid-row: 1 / span 2; }
+
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 2rem var(--gutter);
+    border-top: 2px dashed var(--ink);
+    font-weight: 700;
+  }
+  .pager a { text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .work, .process { grid-template-columns: 1fr; }
+    .process-image { grid-column: 1; grid-row: auto; }
+  }
+</style>
